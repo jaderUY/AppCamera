@@ -1,0 +1,7 @@
+{
+  "name": "AppCamera",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
