@@ -7,10 +7,18 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
-    <img [src]="photoUrl()" alt="">
+    <!-- Iterador optimizado de Angular 17 para el arreglo de fotos -->
+    <div class="gallery-container">
+      @for (photo of photos(); track $index) {
+        <img [src]="photo" alt="Fotografía capturada">
+      } @empty {
+        <p class="empty-msg">No hay fotos en la galería.</p>
+      }
+    </div>
 
-    <ion-fab horizontal="end" vertical="bottom" (click)="takePicture()">
-      <ion-fab-button>
+    <!-- Botón que ejecuta la acción (click)="takePicture()" -->
+    <ion-fab horizontal="end" vertical="bottom" slot="fixed">
+      <ion-fab-button (click)="takePicture()">
         <ion-icon name="add"></ion-icon>
       </ion-fab-button>
     </ion-fab>
