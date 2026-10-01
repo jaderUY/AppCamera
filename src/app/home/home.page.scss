@@ -1,24 +1,184 @@
-/* Estilos para el contenedor de la galería */
+:host {
+  --ink: #1d2923;
+  --paper: #f2f0e9;
+  --muted: #778078;
+  --accent: #d6eb70;
+}
+
+ion-header {
+  box-shadow: none;
+}
+
+ion-toolbar {
+  --background: #1d2923;
+  --color: #f7f5ed;
+  --min-height: 66px;
+  --border-width: 0;
+  padding-inline: 8px;
+}
+
+ion-title {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 21px;
+  font-weight: 500;
+}
+
+ion-content {
+  --background: var(--paper);
+  --color: var(--ink);
+}
+
+.photo-count {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  margin-inline-end: 8px;
+  place-items: center;
+  border: 1px solid rgb(247 245 237 / 24%);
+  border-radius: 50%;
+  color: #f7f5ed;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.gallery-page {
+  min-height: 100%;
+  padding: 34px 20px 108px;
+}
+
+.gallery-heading {
+  margin: 0 auto 26px;
+  max-width: 920px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #66746a;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+h1 {
+  margin: 0;
+  color: var(--ink);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 36px;
+  font-weight: 500;
+}
+
+.photo-total {
+  margin: 7px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
 .gallery-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 10px;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.photo-card {
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid #e2e0d7;
+  border-radius: 5px;
+  background: #fbfaf6;
+  animation: arrive 320ms ease both;
 
   img {
-    width: calc(50% - 8px); /* Para mostrar dos imágenes por fila */
-    height: 150px;
+    display: block;
+    width: 100%;
+    aspect-ratio: 4 / 5;
     object-fit: cover;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    background: #e5e3da;
+  }
+
+  figcaption {
+    padding: 9px 10px 10px;
+    color: #606b63;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
   }
 }
 
-.empty-msg {
+.empty-state {
+  display: grid;
+  min-height: 42vh;
+  place-content: center;
+  justify-items: center;
+  padding: 20px;
   text-align: center;
-  color: #8c8c8c;
-  width: 100%;
-  margin-top: 50px;
-  font-size: 16px;
+
+  h2 {
+    margin: 18px 0 6px;
+    color: var(--ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 23px;
+    font-weight: 500;
+  }
+
+  p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 14px;
+  }
+}
+
+.empty-icon {
+  display: grid;
+  width: 62px;
+  height: 62px;
+  place-items: center;
+  border: 1px solid #d9ddd3;
+  border-radius: 50%;
+  color: #526b58;
+  font-size: 25px;
+}
+
+.error-message {
+  max-width: 920px;
+  margin: 0 auto 16px;
+  color: #a2392c;
+  font-size: 14px;
+}
+
+ion-fab-button {
+  --background: var(--accent);
+  --background-activated: #c9df60;
+  --color: #263328;
+  --box-shadow: 0 5px 18px rgb(29 41 35 / 18%);
+  width: 58px;
+  height: 58px;
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (min-width: 700px) {
+  .gallery-page {
+    padding: 46px 32px 110px;
+  }
+
+  .gallery-container {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-card {
+    animation: none;
+  }
 }

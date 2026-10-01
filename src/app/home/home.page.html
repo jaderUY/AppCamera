@@ -1,25 +1,51 @@
-<ion-header [translucent]="true">
+<ion-header>
   <ion-toolbar>
-    <ion-title>
-      Camera
-    </ion-title>
+    <ion-title>Mi cámara</ion-title>
+    <span class="photo-count" slot="end">{{ photos().length }}</span>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-    <!-- Iterador optimizado de Angular 17 para el arreglo de fotos -->
-    <div class="gallery-container">
-      @for (photo of photos(); track $index) {
-        <img [src]="photo" alt="Fotografía capturada">
-      } @empty {
-        <p class="empty-msg">No hay fotos en la galería.</p>
-      }
-    </div>
+  <main class="gallery-page">
+    <header class="gallery-heading">
+      <p class="eyebrow">TU ARCHIVO PERSONAL</p>
+      <h1>Momentos</h1>
+      <p class="photo-total">
+        {{ photos().length }} {{ photos().length === 1 ? 'fotografía guardada' : 'fotografías guardadas' }}
+      </p>
+    </header>
 
-    <!-- Botón que ejecuta la acción (click)="takePicture()" -->
-    <ion-fab horizontal="end" vertical="bottom" slot="fixed">
-      <ion-fab-button (click)="takePicture()">
-        <ion-icon name="add"></ion-icon>
-      </ion-fab-button>
-    </ion-fab>
+    @if (errorMessage()) {
+      <p class="error-message" role="alert">{{ errorMessage() }}</p>
+    }
+
+    @if (photos().length > 0) {
+      <div class="gallery-container">
+        @for (photo of photos(); track photo.name) {
+          <figure class="photo-card">
+            <img [src]="photo.source" [alt]="'Fotografía del ' + formatDate(photo.createdAt)" loading="lazy">
+            <figcaption>{{ formatDate(photo.createdAt) }}</figcaption>
+          </figure>
+        }
+      </div>
+    } @else {
+      <section class="empty-state" aria-live="polite">
+        <div class="empty-icon">
+          <ion-icon name="images" aria-hidden="true"></ion-icon>
+        </div>
+        <h2>Aquí empieza tu historia</h2>
+        <p>Tus fotografías aparecerán en este espacio.</p>
+      </section>
+    }
+  </main>
+
+  <ion-fab horizontal="end" vertical="bottom" slot="fixed">
+    <ion-fab-button
+      (click)="takePicture()"
+      [disabled]="isCapturing()"
+      aria-label="Tomar fotografía"
+      title="Tomar fotografía">
+      <ion-icon name="camera" aria-hidden="true"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
 </ion-content>

@@ -1,8 +1,18 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
 import { Camera } from '@capacitor/camera';
+import { Directory, Filesystem } from '@capacitor/filesystem';
 import { IonHeader, IonToolbar, IonTitle, IonContent, IonFab, IonFabButton, IonIcon } from '@ionic/angular';
-import { addIcons} from 'ionicons';
-import { add } from 'ionicons/icons';
+import { addIcons } from 'ionicons';
+import { camera, images } from 'ionicons/icons';
+
+interface PhotoItem {
+  name: string;
+  source: string;
+  createdAt: number;
+}
+
+const photoDirectory = 'photos';
 
 @Component({
   selector: 'app-home',
@@ -11,45 +21,124 @@ import { add } from 'ionicons/icons';
   standalone: true,
   imports: [IonHeader, IonToolbar, IonTitle, IonContent, IonFab, IonFabButton, IonIcon],
 })
-export class HomePage {
-  photos = signal<string[]>([]);
-  photosBase64 = signal<string[]>([]);
+export class HomePage implements OnInit {
+  photos = signal<PhotoItem[]>([]);
+  isCapturing = signal(false);
+  errorMessage = signal('');
 
   constructor() {
-    addIcons({ add });
+    addIcons({ camera, images });
   }
 
-  async takePicture() {
+  async ngOnInit() {
+    await this.loadPhotos();
+  }
+
+  async takePicture(): Promise<void> {
+    if (this.isCapturing()) return;
+
+    this.isCapturing.set(true);
+    this.errorMessage.set('');
+
     try {
-      // API moderna: takePhoto reemplaza por completo a getPhoto y CameraSource
       const image = await Camera.takePhoto({
         quality: 90,
-        saveToGallery: true
+        saveToGallery: false,
+      });
+      const source = image.webPath ?? (image.uri ? Capacitor.convertFileSrc(image.uri) : null);
+
+      if (!source) throw new Error('La cámara no devolvió una imagen válida.');
+
+      const response = await fetch(source);
+      if (!response.ok) throw new Error('No se pudo leer la fotografía capturada.');
+
+      const imageData = await this.blobToBase64(await response.blob());
+      const fileName = `photo-${Date.now()}.jpg`;
+      await Filesystem.writeFile({
+        path: `${photoDirectory}/${fileName}`,
+        data: imageData,
+        directory: Directory.Data,
+        recursive: true,
       });
 
-      if (image.webPath) {
-        // 1. Mostramos la imagen en el HTML (rápido y eficiente en memoria)
-        this.photos.update(current => [image.webPath!, ...current]);
-        
-        // 2. Ejecutamos el método si necesitas subir la foto a un servidor
-        const base64String = await this.webPathToBase64(image.webPath);
-        this.photosBase64.update(current => [base64String, ...current]);
-      }
+      await this.loadPhotos();
     } catch (error) {
       console.error('Error al tomar la foto', error);
+      this.errorMessage.set('No se pudo guardar la foto. Inténtalo de nuevo.');
+    } finally {
+      this.isCapturing.set(false);
     }
   }
 
-  // Método reintegrado para convertir el webPath nativo a un formato transmisible por red
-  async webPathToBase64(webPath: string): Promise<string> {
-    const response = await fetch(webPath);
-    const blob = await response.blob();
-    
+  private async loadPhotos(): Promise<void> {
+    try {
+      await Filesystem.mkdir({
+        path: photoDirectory,
+        directory: Directory.Data,
+        recursive: true,
+      });
+      const { files } = await Filesystem.readdir({
+        path: photoDirectory,
+        directory: Directory.Data,
+      });
+
+      const savedPhotos = await Promise.all(
+        files
+          .filter(file => file.type === 'file' && file.name.toLowerCase().endsWith('.jpg'))
+          .map(async file => {
+            const { uri } = await Filesystem.getUri({
+              path: `${photoDirectory}/${file.name}`,
+              directory: Directory.Data,
+            });
+
+            let source: string;
+            if (Capacitor.isNativePlatform()) {
+              source = Capacitor.convertFileSrc(uri);
+            } else {
+              const { data } = await Filesystem.readFile({
+                path: `${photoDirectory}/${file.name}`,
+                directory: Directory.Data,
+              });
+              source = data instanceof Blob
+                ? URL.createObjectURL(data)
+                : `data:image/jpeg;base64,${data}`;
+            }
+
+            return { name: file.name, source, createdAt: file.mtime };
+          }),
+      );
+
+      savedPhotos.sort((first, second) => second.createdAt - first.createdAt);
+      this.photos.set(savedPhotos);
+    } catch (error) {
+      this.photos.set([]);
+      if (Capacitor.isNativePlatform()) {
+        console.error('Error al cargar la galería', error);
+        this.errorMessage.set('No se pudo cargar la galería de fotos.');
+      }
+    }
+  }
+
+  formatDate(timestamp: number): string {
+    return new Intl.DateTimeFormat('es', {
+      day: '2-digit',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(timestamp);
+  }
+
+  private blobToBase64(blob: Blob): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onerror = reject;
+      reader.onerror = () => reject(reader.error);
       reader.onload = () => {
-        resolve(reader.result as string);
+        const result = reader.result;
+        if (typeof result !== 'string') {
+          reject(new Error('No se pudo procesar la fotografía.'));
+          return;
+        }
+        resolve(result.split(',')[1]);
       };
       reader.readAsDataURL(blob);
     });
