@@ -24,6 +24,7 @@ export class PhotoService {
     const currentDate = new Date();
 
     return {
+      // Generamos un nombre único para la foto usando la fecha y hora actual
       name: `photo_${currentDate.getTime()}.jpeg`,
       source: capturedPhoto.webPath || '',
       createdAt: currentDate.toISOString()
